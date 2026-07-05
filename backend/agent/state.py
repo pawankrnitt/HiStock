@@ -6,6 +6,7 @@ class AgentState(TypedDict):
     sessionId:        str       # empty string in Phase 2 — used from Phase 3
     userId:           str       # empty string in Phase 2 — used from Phase 4
     company:          str       # "NVDA" | "TSLA" | "both" | ""
+    messageId:        str       # Phase 3 — used to tag ai_token events for the frontend
 
     # Planning
     planSteps:        list[str]

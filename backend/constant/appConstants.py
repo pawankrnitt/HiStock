@@ -63,13 +63,22 @@ ALPHA_VANTAGE_KEY             = os.getenv("ALPHA_VANTAGE_KEY")   # used from Pha
 
 # ── Real-time (used from Phase 3) ────────────────────────────────────────────
 UPSTASH_REDIS_URL             = os.getenv("UPSTASH_REDIS_URL")
+SOCKET_REDIS_CHANNEL          = "stocksense_socketio"     # pub/sub channel name for Socket.io adapter
 PRICE_POLL_INTERVAL_SECONDS   = 5
 REDIS_PRICE_TTL               = 10      # seconds
 REDIS_ACTIVE_SESSION_TTL      = 3600    # 1 hour
+REDIS_SOCKET_MAP_TTL          = 3600    # 1 hour — socketId-to-userId mapping expiry
 
 # ── Rate limiting (used from Phase 3) ────────────────────────────────────────
 DAILY_FREE_QUERY_LIMIT        = 10
 DAILY_PRO_QUERY_LIMIT         = 9999
+RATE_LIMIT_KEY_PREFIX         = "ratelimit"
+
+# ── Redis key prefixes (centralize all key naming — avoid typos across files) ─
+REDIS_KEY_PRICE_CACHE         = "price"              # price:{ticker}
+REDIS_KEY_ACTIVE_SESSIONS     = "active_sessions"     # single key — JSON list
+REDIS_KEY_SOCKET_USER_MAP     = "socket"              # socket:{userId} → sid
+REDIS_KEY_SESSION_TICKERS     = "session_tickers"     # session_tickers:{sessionId} → JSON list
 
 # ── S3 Paths ──────────────────────────────────────────────────────────────────
 S3_DOCUMENTS_PREFIX           = "documents"

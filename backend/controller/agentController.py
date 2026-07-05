@@ -33,6 +33,7 @@ async def runAgentQuery(queryData: AgentQuerySchema) -> AgentResponseSchema:
         "sessionId":        queryData.sessionId or "",
         "userId":           "",
         "company":          queryData.company.value if queryData.company else "both",
+        "messageId":        "",
         "planSteps":        [],
         "toolCallHistory":  [],
         "subQueryResults":  [],

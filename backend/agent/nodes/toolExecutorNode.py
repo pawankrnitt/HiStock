@@ -11,12 +11,23 @@ from agent.tools.searchDocumentsTool import runSearchDocumentsTool
 from agent.tools.searchNewsTool import runSearchNewsTool
 from agent.tools.calculateRatioTool import runCalculateRatioTool
 from enums.toolNameEnum import ToolNameEnum
+from socketio_layer.socketServer import sio
+from enums.socketEventEnum import SocketEventEnum
+from service.redisService import addTickersToSession
 
 TOOL_DISPATCH = {
     ToolNameEnum.STOCK_PRICE:      (runStockPriceTool,       StockPriceInputSchema),
     ToolNameEnum.SEARCH_DOCUMENTS: (runSearchDocumentsTool,  SearchDocumentsInputSchema),
     ToolNameEnum.SEARCH_NEWS:      (runSearchNewsTool,       SearchNewsInputSchema),
     ToolNameEnum.CALCULATE_RATIO:  (runCalculateRatioTool,   CalculateRatioInputSchema),
+}
+
+# Friendly thinking-step labels shown to users while a tool runs
+THINKING_LABELS = {
+    ToolNameEnum.STOCK_PRICE:      "Fetching live price data...",
+    ToolNameEnum.SEARCH_DOCUMENTS: "Searching financial documents...",
+    ToolNameEnum.SEARCH_NEWS:      "Checking recent news...",
+    ToolNameEnum.CALCULATE_RATIO:  "Calculating financial ratios...",
 }
 
 async def toolExecutorNode(state: AgentState) -> AgentState:
@@ -33,10 +44,11 @@ async def toolExecutorNode(state: AgentState) -> AgentState:
     if not planningEntry:
         return state
 
-    plannedCalls    = planningEntry.get("plannedCalls", [])
-    newToolHistory  = list(state.get("toolCallHistory", []))
-    subQueryResults = list(state.get("subQueryResults", []))
-    retrievedChunks = list(state.get("retrievedChunks", []))
+    plannedCalls     = planningEntry.get("plannedCalls", [])
+    newToolHistory   = list(state.get("toolCallHistory", []))
+    subQueryResults  = list(state.get("subQueryResults", []))
+    retrievedChunks  = list(state.get("retrievedChunks", []))
+    mentionedTickers = set()
 
     for call in plannedCalls:
         toolName   = call.get("toolName")
@@ -45,6 +57,14 @@ async def toolExecutorNode(state: AgentState) -> AgentState:
         if toolName not in TOOL_DISPATCH:
             continue
 
+        # Emit a thinking step for this specific tool, if tied to a session
+        if state.get("sessionId"):
+            await sio.emit(
+                SocketEventEnum.AI_THINKING,
+                {"step": THINKING_LABELS.get(toolName, "Working on it...")},
+                room=state["sessionId"]
+            )
+
         toolFn, InputSchema = TOOL_DISPATCH[toolName]
 
         try:
@@ -52,6 +72,12 @@ async def toolExecutorNode(state: AgentState) -> AgentState:
             outputData  = await toolFn(inputData)
             outputDict  = outputData.model_dump()
             success     = not outputData.error if hasattr(outputData, 'error') else True
+
+            # Track which ticker this call was about
+            if "ticker" in arguments:
+                mentionedTickers.add(arguments["ticker"])
+            if "company" in arguments and arguments["company"]:
+                mentionedTickers.add(arguments["company"])
 
         except Exception as e:
             outputDict = {"error": str(e)}
@@ -73,6 +99,10 @@ async def toolExecutorNode(state: AgentState) -> AgentState:
             chunks = outputDict.get("chunks", [])
             retrievedChunks.extend(chunks)
 
+    # Register mentioned tickers so the price ticker worker tracks this room
+    if state.get("sessionId") and mentionedTickers:
+        await addTickersToSession(state["sessionId"], list(mentionedTickers))
+
     return {
         **state,
         "toolCallHistory":  newToolHistory,
@@ -80,3 +110,4 @@ async def toolExecutorNode(state: AgentState) -> AgentState:
         "retrievedChunks":  retrievedChunks,
         "iterationCount":   state.get("iterationCount", 0) + 1
     }
+

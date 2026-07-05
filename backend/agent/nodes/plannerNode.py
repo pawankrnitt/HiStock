@@ -5,6 +5,8 @@ from agent.tools.stockPriceTool import STOCK_PRICE_TOOL_DEFINITION
 from agent.tools.searchDocumentsTool import SEARCH_DOCUMENTS_TOOL_DEFINITION
 from agent.tools.searchNewsTool import SEARCH_NEWS_TOOL_DEFINITION
 from agent.tools.calculateRatioTool import CALCULATE_RATIO_TOOL_DEFINITION
+from socketio_layer.socketServer import sio
+from enums.socketEventEnum import SocketEventEnum
 
 ALL_TOOL_DEFINITIONS = [
     STOCK_PRICE_TOOL_DEFINITION,
@@ -34,6 +36,14 @@ async def plannerNode(state: AgentState) -> AgentState:
     Planning node — uses LLM tool calling to decide which tools to invoke.
     Stores planned tool calls in state["planSteps"].
     """
+    # Emit thinking step, only if this run is tied to a real session
+    if state.get("sessionId"):
+        await sio.emit(
+            SocketEventEnum.AI_THINKING,
+            {"step": "Planning research steps..."},
+            room=state["sessionId"]
+        )
+
     responseMessage = getCompletionWithToolCalling(
         systemPrompt=PLANNER_SYSTEM_PROMPT,
         userPrompt=f"Question: {state['question']}",
@@ -63,3 +73,4 @@ async def plannerNode(state: AgentState) -> AgentState:
             {"phase": "planning", "plannedCalls": plannedCalls}
         ]
     }
+

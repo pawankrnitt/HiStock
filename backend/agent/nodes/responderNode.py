@@ -1,7 +1,9 @@
 import json
 from agent.state import AgentState
-from service.groqService import getCompletion
+from service.groqService import getCompletion, streamCompletion
 from constant.appConstants import GROQ_MODEL_NAME
+from socketio_layer.socketServer import sio
+from enums.socketEventEnum import SocketEventEnum
 
 RESPONDER_SYSTEM_PROMPT = """
 You are a financial research assistant for NVIDIA (NVDA) and Tesla (TSLA) stocks.
@@ -101,17 +103,36 @@ def buildSourcesFromState(state: AgentState) -> list[dict]:
 async def responderNode(state: AgentState) -> AgentState:
     """
     Generate the final cited answer.
-    Phase 2: non-streaming (complete answer returned at once).
-    Phase 3+: this node receives a socket emitter and switches to streaming.
+    Phase 2: non-streaming (complete answer returned at once via REST).
+    Phase 3: streams tokens via Socket.io when sessionId is present.
     """
     contextText = buildContextFromState(state)
     userPrompt  = f"Context:\n\n{contextText}\n\nQuestion: {state['question']}"
+    sessionId   = state.get("sessionId", "")
+    messageId   = state.get("messageId", "")    # passed through from questionHandler
 
-    finalAnswer = getCompletion(
-        systemPrompt=RESPONDER_SYSTEM_PROMPT,
-        userPrompt=userPrompt,
-        maxTokens=1500
-    )
+    if sessionId:
+        # ── STREAMING PATH (real-time, used by Socket.io question handler) ─────
+        accumulatedAnswer = ""
+        async for token in streamCompletion(
+            systemPrompt=RESPONDER_SYSTEM_PROMPT,
+            userPrompt=userPrompt,
+            maxTokens=1500
+        ):
+            accumulatedAnswer += token
+            await sio.emit(
+                SocketEventEnum.AI_TOKEN,
+                {"token": token, "messageId": messageId},
+                room=sessionId
+            )
+        finalAnswer = accumulatedAnswer
+    else:
+        # ── NON-STREAMING PATH (Phase 2 REST /test/agent — unchanged behavior) ─
+        finalAnswer = getCompletion(
+            systemPrompt=RESPONDER_SYSTEM_PROMPT,
+            userPrompt=userPrompt,
+            maxTokens=1500
+        )
 
     sources = buildSourcesFromState(state)
 
@@ -120,3 +141,4 @@ async def responderNode(state: AgentState) -> AgentState:
         "finalAnswer": finalAnswer,
         "sources":     sources
     }
+
