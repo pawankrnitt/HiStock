@@ -84,3 +84,27 @@ REDIS_KEY_SESSION_TICKERS     = "session_tickers"     # session_tickers:{session
 S3_DOCUMENTS_PREFIX           = "documents"
 S3_UPLOADS_PREFIX             = "user-uploads"
 S3_REPORTS_PREFIX             = "reports"
+
+# ── Cognito (add to existing appConstants.py) ──────────────────────────────────
+COGNITO_USER_POOL_ID   = os.getenv("COGNITO_USER_POOL_ID")
+COGNITO_CLIENT_ID      = os.getenv("COGNITO_CLIENT_ID")
+COGNITO_REGION         = os.getenv("COGNITO_REGION", "ap-south-1")
+COGNITO_JWKS_URL       = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
+
+# ── JWT ───────────────────────────────────────────────────────────────────────
+JWT_ALGORITHM                = "RS256"
+ACCESS_TOKEN_EXPIRY_SECONDS  = 3600         # 1 hour
+REFRESH_TOKEN_EXPIRY_DAYS    = 30
+
+# ── S3 — User uploads (extends Phase 1's S3 constants) ─────────────────────────
+S3_UPLOADS_BUCKET            = os.getenv("S3_UPLOADS_BUCKET", "stocksense-uploads")
+S3_REPORTS_BUCKET            = os.getenv("S3_REPORTS_BUCKET", "stocksense-reports")
+PRESIGN_URL_EXPIRY_SECONDS   = 900          # 15 min to complete the upload
+REPORT_URL_EXPIRY_SECONDS    = 86400        # 24 hours to download the report
+
+# ── SQS (referenced here, actual queue + Lambda built in Phase 6) ──────────────
+SQS_INGESTION_QUEUE_URL      = os.getenv("SQS_INGESTION_QUEUE_URL")
+
+# ── Document upload limits ──────────────────────────────────────────────────────
+MAX_UPLOAD_FILE_SIZE_MB      = 10
+ALLOWED_UPLOAD_CONTENT_TYPES = ["application/pdf", "text/plain", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]

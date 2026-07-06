@@ -19,3 +19,22 @@ class ProcessedDocSchema(BaseModel):
     chunksCount: int
     status:      str            # "completed" | "failed"
     processedAt: str
+
+class PresignUrlRequestSchema(BaseModel):
+    fileName:    str = Field(..., min_length=1)
+    contentType: str
+
+class PresignUrlResponseSchema(BaseModel):
+    presignUrl: str
+    docId:      str
+    s3Key:      str
+
+class UserDocumentSchema(BaseModel):
+    docId:       str
+    userId:      str
+    fileName:    str
+    s3Key:       str
+    namespace:   str
+    chunksCount: int = 0
+    status:      str    # "pending" | "processing" | "completed" | "failed"
+    uploadedAt:  str

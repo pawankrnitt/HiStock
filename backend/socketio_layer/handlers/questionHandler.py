@@ -1,7 +1,4 @@
-# socketio_layer/handlers/questionHandler.py
-# Responsibility: Handle "ask_question" — validate, rate-limit, broadcast,
-# then invoke the (now streaming-aware) agent graph.
-
+import uuid
 from pydantic import ValidationError
 from socketio_layer.socketServer import sio
 from schema.socketSchema import AskQuestionEventSchema, QuestionReceivedEventSchema, AiDoneEventSchema
@@ -9,9 +6,11 @@ from enums.socketEventEnum import SocketEventEnum
 from socketio_layer.middleware.rateLimitMiddleware import checkRateLimit
 from agent.graph import agentGraph
 from controller.agentController import isQueryInScope, OUT_OF_SCOPE_MESSAGE
+from repo.messageRepo import insertMessage
+from repo.sessionRepo import addTickersToSessionRecord
+from utils.tickerExtractor import extractTickersFromText
 
 def registerQuestionHandlers():
-    """Register the ask_question event handler."""
 
     @sio.on(SocketEventEnum.ASK_QUESTION)
     async def onAskQuestion(sid, data):
@@ -26,7 +25,6 @@ def registerQuestionHandlers():
         userName = session.get("name", "User")
         userPlan = session.get("plan", "free")
 
-        # Rate limit check
         allowed = await checkRateLimit(userId, userPlan)
         if not allowed:
             await sio.emit(SocketEventEnum.RATE_LIMIT_EXCEEDED, {
@@ -34,7 +32,6 @@ def registerQuestionHandlers():
             }, to=sid)
             return
 
-        # Scope guard — same rule as Phase 2's REST endpoint
         if not isQueryInScope(eventData.question):
             await sio.emit(SocketEventEnum.AI_DONE, AiDoneEventSchema(
                 messageId=eventData.messageId,
@@ -43,19 +40,14 @@ def registerQuestionHandlers():
             ).model_dump(), room=eventData.sessionId)
             return
 
-        # Broadcast the question to everyone in the room (including sender)
         await sio.emit(
             SocketEventEnum.QUESTION_RECEIVED,
             QuestionReceivedEventSchema(
-                question=eventData.question,
-                askedBy=userName,
-                messageId=eventData.messageId
+                question=eventData.question, askedBy=userName, messageId=eventData.messageId
             ).model_dump(),
             room=eventData.sessionId
         )
 
-        # Run the agentic pipeline — streaming happens INSIDE the graph nodes
-        # (plannerNode/toolExecutorNode emit "ai_thinking", responderNode emits "ai_token")
         initialState = {
             "question":         eventData.question,
             "sessionId":        eventData.sessionId,
@@ -73,14 +65,23 @@ def registerQuestionHandlers():
         }
 
         finalState = await agentGraph.ainvoke(initialState)
+        finalAnswer = finalState.get("finalAnswer", "")
+        sources     = finalState.get("sources", [])
 
-        # Final event — tells the frontend streaming is complete, includes sources
         await sio.emit(
             SocketEventEnum.AI_DONE,
-            AiDoneEventSchema(
-                messageId=eventData.messageId,
-                answer=finalState.get("finalAnswer", ""),
-                sources=finalState.get("sources", [])
-            ).model_dump(),
+            AiDoneEventSchema(messageId=eventData.messageId, answer=finalAnswer, sources=sources).model_dump(),
             room=eventData.sessionId
         )
+
+        await insertMessage(
+            sessionId=eventData.sessionId,
+            userId=userId,
+            question=eventData.question,
+            answer=finalAnswer,
+            sources=sources
+        )
+
+        mentionedTickers = extractTickersFromText(finalAnswer)
+        if mentionedTickers:
+            await addTickersToSessionRecord(eventData.sessionId, mentionedTickers)
