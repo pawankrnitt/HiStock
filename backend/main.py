@@ -15,6 +15,7 @@ from socketio_layer.middleware.authMiddleware import registerAuthMiddleware
 from socketio_layer.handlers.sessionHandler import registerSessionHandlers
 from socketio_layer.handlers.questionHandler import registerQuestionHandlers
 from socketio_layer.handlers.presenceHandler import registerPresenceHandlers
+from constant.appConstants import ALLOWED_ORIGINS
 
 from worker.priceTickerWorker import startPriceTickerWorker
 from middleware.errorMiddleware import globalExceptionHandler
@@ -25,12 +26,15 @@ fastApiApp = FastAPI(
     version="0.4.0"
 )
 
+
 fastApiApp.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"]
+    allow_origins=ALLOWED_ORIGINS,      # Only CloudFront domain in production
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
 
 fastApiApp.add_exception_handler(Exception, globalExceptionHandler)
 
@@ -52,7 +56,7 @@ registerPresenceHandlers()
 
 @fastApiApp.on_event("startup")
 async def onStartup():
-    asyncio.create_task(startPriceTickerWorker(sio))
+    asyncio.create_task(startPriceTickerWorker())
     print("[startup] Price ticker worker started.")
 
 app = socketio.ASGIApp(sio, other_asgi_app=fastApiApp, socketio_path="socket.io")

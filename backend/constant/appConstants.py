@@ -7,6 +7,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ── Production config ──────────────────────────────────────────────────────────
+# IS_PRODUCTION is True when running on ECS (ENVIRONMENT env var = "production")
+# IS_PRODUCTION is False when running locally (default)
+ENVIRONMENT       = os.getenv("ENVIRONMENT", "development")
+IS_PRODUCTION     = ENVIRONMENT == "production"
+
+ALLOWED_ORIGINS   = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+
 # ── AWS ──────────────────────────────────────────────────────────────────────
 AWS_REGION                    = os.getenv("AWS_REGION", "ap-south-1")
 S3_DOCUMENTS_BUCKET           = os.getenv("S3_DOCUMENTS_BUCKET", "histock-documents")

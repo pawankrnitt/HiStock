@@ -44,8 +44,7 @@ def signupUser(email: str, password: str, name: str) -> str:
         Password=password,
         UserAttributes=[
             {"Name": "email", "Value": email},
-            {"Name": "name",  "Value": name},
-            {"Name": "custom:plan", "Value": "free"}
+            {"Name": "name",  "Value": name}
         ]
     )
     client.admin_confirm_sign_up(UserPoolId=COGNITO_USER_POOL_ID, Username=email)

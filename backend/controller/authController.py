@@ -19,7 +19,8 @@ async def signup(body: SignupSchema) -> UserResponseSchema:
 async def login(body: LoginSchema) -> TokenResponseSchema:
     try:
         authResult = loginUser(body.email, body.password)
-    except Exception:
+    except Exception as e:
+        print("LOGIN ERROR:", e)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
     return TokenResponseSchema(

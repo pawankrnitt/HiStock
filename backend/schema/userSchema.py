@@ -33,4 +33,4 @@ class UserResponseSchema(BaseModel):
     userId: str
     email:  str
     name:   str
-    plan:   UserPlanEnum
+    plan:   UserPlanEnum = UserPlanEnum.FREE

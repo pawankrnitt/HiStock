@@ -5,6 +5,17 @@ import { login, signup } from "../services/authService";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
 
+const getErrorMessage = (error, defaultMsg) => {
+  const detail = error.response?.data?.detail;
+  if (Array.isArray(detail)) {
+    return detail.map(err => err.msg).join(", ");
+  }
+  if (typeof detail === "string") {
+    return detail;
+  }
+  return defaultMsg;
+};
+
 const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { setTokens, logout: storeLogout } = useAuthStore();
@@ -17,7 +28,7 @@ const useAuth = () => {
       setTokens(accessToken, refreshToken);
       navigate("/dashboard");
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Login failed. Check your credentials.");
+      toast.error(getErrorMessage(error, "Login failed. Check your credentials."));
     } finally {
       setIsLoading(false);
     }
@@ -30,7 +41,7 @@ const useAuth = () => {
       toast.success("Account created! Please log in.");
       navigate("/login");
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Signup failed. Try a different email.");
+      toast.error(getErrorMessage(error, "Signup failed. Try a different email."));
     } finally {
       setIsLoading(false);
     }
