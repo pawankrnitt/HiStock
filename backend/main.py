@@ -21,7 +21,7 @@ from worker.priceTickerWorker import startPriceTickerWorker
 from middleware.errorMiddleware import globalExceptionHandler
 
 fastApiApp = FastAPI(
-    title="StockSense AI",
+    title="HIStock",
     description="Real-Time Stock Research Co-pilot — NVDA & TSLA",
     version="0.4.0"
 )

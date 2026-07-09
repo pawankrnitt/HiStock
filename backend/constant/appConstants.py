@@ -71,7 +71,7 @@ ALPHA_VANTAGE_KEY             = os.getenv("ALPHA_VANTAGE_KEY")   # used from Pha
 
 # ── Real-time (used from Phase 3) ────────────────────────────────────────────
 UPSTASH_REDIS_URL             = os.getenv("UPSTASH_REDIS_URL")
-SOCKET_REDIS_CHANNEL          = "stocksense_socketio"     # pub/sub channel name for Socket.io adapter
+SOCKET_REDIS_CHANNEL          = "histock_socketio"     # pub/sub channel name for Socket.io adapter
 PRICE_POLL_INTERVAL_SECONDS   = 5
 REDIS_PRICE_TTL               = 10      # seconds
 REDIS_ACTIVE_SESSION_TTL      = 3600    # 1 hour
@@ -105,8 +105,8 @@ ACCESS_TOKEN_EXPIRY_SECONDS  = 3600         # 1 hour
 REFRESH_TOKEN_EXPIRY_DAYS    = 30
 
 # ── S3 — User uploads (extends Phase 1's S3 constants) ─────────────────────────
-S3_UPLOADS_BUCKET            = os.getenv("S3_UPLOADS_BUCKET", "stocksense-uploads")
-S3_REPORTS_BUCKET            = os.getenv("S3_REPORTS_BUCKET", "stocksense-reports")
+S3_UPLOADS_BUCKET            = os.getenv("S3_UPLOADS_BUCKET", "histock-uploads")
+S3_REPORTS_BUCKET            = os.getenv("S3_REPORTS_BUCKET", "histock-reports")
 PRESIGN_URL_EXPIRY_SECONDS   = 900          # 15 min to complete the upload
 REPORT_URL_EXPIRY_SECONDS    = 86400        # 24 hours to download the report
 

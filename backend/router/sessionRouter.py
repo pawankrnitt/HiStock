@@ -6,14 +6,14 @@ from middleware.authMiddleware import getCurrentUser
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
-@router.post("/", response_model=SessionResponseSchema, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=SessionResponseSchema, status_code=status.HTTP_201_CREATED)
 async def createSessionRoute(
     body: CreateSessionSchema,
     currentUser: UserSchema = Depends(getCurrentUser)
 ) -> SessionResponseSchema:
     return await createSession(body, currentUser)
 
-@router.get("/", response_model=list[SessionResponseSchema])
+@router.get("", response_model=list[SessionResponseSchema])
 async def listSessionsRoute(
     currentUser: UserSchema = Depends(getCurrentUser)
 ) -> list[SessionResponseSchema]:
