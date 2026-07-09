@@ -48,6 +48,13 @@ def signupUser(email: str, password: str, name: str) -> str:
         ]
     )
     client.admin_confirm_sign_up(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
+    client.admin_update_user_attributes(
+        UserPoolId=COGNITO_USER_POOL_ID,
+        Username=email,
+        UserAttributes=[
+            {"Name": "email_verified", "Value": "true"}
+        ]
+    )
     return response["UserSub"]
 
 def loginUser(email: str, password: str) -> dict:
