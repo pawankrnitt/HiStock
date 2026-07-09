@@ -13,7 +13,7 @@ load_dotenv()
 ENVIRONMENT       = os.getenv("ENVIRONMENT", "development")
 IS_PRODUCTION     = ENVIRONMENT == "production"
 
-ALLOWED_ORIGINS   = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+ALLOWED_ORIGINS   = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
 
 # ── AWS ──────────────────────────────────────────────────────────────────────
 AWS_REGION                    = os.getenv("AWS_REGION", "ap-south-1")
@@ -96,7 +96,7 @@ S3_REPORTS_PREFIX             = "reports"
 # ── Cognito (add to existing appConstants.py) ──────────────────────────────────
 COGNITO_USER_POOL_ID   = os.getenv("COGNITO_USER_POOL_ID")
 COGNITO_CLIENT_ID      = os.getenv("COGNITO_CLIENT_ID")
-COGNITO_REGION         = os.getenv("COGNITO_REGION", "ap-south-1")
+COGNITO_REGION         = os.getenv("AWS_REGION", "eu-north-1")
 COGNITO_JWKS_URL       = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
